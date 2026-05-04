@@ -88,7 +88,17 @@ end
 local chatType = getChatType()
 print(`Chat system detected: {chatType}`)
 
--- script stuff
+-- HTML decode function for TextChatService
+local function decodeHTMLEntities(text: string): string
+    if not text then return "" end
+    return text:gsub('&amp;', '&')
+              :gsub('&lt;', '<')
+              :gsub('&gt;', '>')
+              :gsub('&quot;', '"')
+              :gsub('&apos;', "'")
+end
+
+-- GUI stuff
 type GuiOptions = {
     SearchBar: boolean?,
 }
@@ -108,7 +118,9 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     mainFrame.BackgroundTransparency = 1
     mainFrame.BorderSizePixel = 0
+    mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 
+    -- Fade in with size expansion
     local fadeInTween = TweenService:Create(mainFrame, FADE_IN_INFO, {
         BackgroundTransparency = 0,
         Size = UDim2.new(0, 400, 0, 400),
@@ -116,6 +128,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     })
     fadeInTween:Play()
 
+    -- Custom drag with smooth movement
     local dragDetector = Instance.new("UIDragDetector", mainFrame)
     dragDetector.ResponseStyle = Enum.ResponseStyle.Smooth
     dragDetector.DragFrame = mainFrame
@@ -156,6 +169,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         newLabel.TextTransparency = 1
         newLabel.Parent = innerFrame
 
+        -- Stagger the fade-in for each label
         local labelFadeInfo = TweenInfo.new(
             LABEL_FADE_INFO.Time,
             LABEL_FADE_INFO.EasingStyle,
@@ -170,6 +184,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         })
         labelFadeIn:Play()
 
+        -- Slide to final position after fade
         labelFadeIn.Completed:Connect(function()
             local slideToFinal = TweenService:Create(newLabel, 
                 TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -195,6 +210,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         searchBox.ClearTextOnFocus = true
         searchBox.BorderSizePixel = 0
 
+        -- Hover effect for search box
         searchBox.MouseEnter:Connect(function()
             TweenService:Create(searchBox, HOVER_INFO, {
                 BackgroundTransparency = 0.3
@@ -219,6 +235,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
             }):Play()
         end)
 
+        -- Animate search results
         searchBox:GetPropertyChangedSignal("Text"):Connect(function()
             local searchText = searchBox.Text:lower()
             
@@ -255,6 +272,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         end)
     end
 
+    -- Close button with animations
     local closeButton = Instance.new("TextButton", mainFrame)
     closeButton.TextSize = 18
     closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -264,9 +282,11 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     closeButton.Style = Enum.ButtonStyle.RobloxButtonDefault
     closeButton.Position = UDim2.new(1, -17, 0, 0)
     closeButton.BackgroundTransparency = 0.7
+    closeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     closeButton.BorderSizePixel = 0
     closeButton.ZIndex = 2
 
+    -- Hover effects for close button
     closeButton.MouseEnter:Connect(function()
         TweenService:Create(closeButton, HOVER_INFO, {
             BackgroundTransparency = 0.3,
@@ -283,6 +303,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         }):Play()
     end)
 
+    -- Fade out on close
     local isClosing = false
     closeButton.MouseButton1Click:Connect(function()
         if isClosing then return end
@@ -302,6 +323,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     return cmdGui
 end
 
+-- Now continue with the rest of the script...
 print('Started initialization of YemAdmin')
 
 if _G.yemdebug and _G.yem then
@@ -608,10 +630,8 @@ local getPlyr = function(caller: Player, name: string)
     return output
 end
 
--- FIXED: E function now only escapes HTML, NOT ampersand
 function E(text: string)
     if not text then return "" end
-    -- Don't escape & to avoid breaking the prefix
     return text:gsub('[<>"\']', {
         ['<'] = '&lt;',
         ['>'] = '&gt;',
@@ -661,6 +681,9 @@ end
 local IssueCommand = function(caller: Player, command: string)
     if not caller or not command then return end
     
+    -- Decode HTML entities in the command
+    command = decodeHTMLEntities(command)
+    
     local prefix = yemenv.config.prefix
     if string.sub(command, 1, #prefix) == prefix then
         command = string.sub(command, #prefix + 1)
@@ -709,6 +732,10 @@ end)
 
 yemenv.events.PlayerChatted:Connect(function(plr: Player, msg: string)
     if not plr or not msg then return end
+    
+    -- Decode HTML entities from TextChatService
+    msg = decodeHTMLEntities(msg)
+    
     local prefix = yemenv.config.prefix
     if string.sub(msg, 1, #prefix) == prefix then
         IssueCommand(plr, msg)
@@ -724,7 +751,9 @@ local bindChatToPlyr = function(plyr: Player)
                 if not isRunning then return end
                 
                 if message.TextSource and message.TextSource.UserId == plyr.UserId then
-                    yemenv.events.PlayerChatted:Fire(plyr, message.Text)
+                    -- Decode HTML entities before sending to event
+                    local decodedText = decodeHTMLEntities(message.Text)
+                    yemenv.events.PlayerChatted:Fire(plyr, decodedText)
                 end
             end)
             
@@ -808,11 +837,11 @@ end)
 if not ss then warn(rr) end
 print('chat hooks')
 
--- FIXED: cmds command - prefix is NOT escaped with E()
+-- COMMANDS
 AddCommand(0, "cmds", "Display a list of basic commands", "<>", function(caller: Player)
     if not caller then return end
     
-    local prefix = yemenv.config.prefix -- Get the raw prefix
+    local prefix = yemenv.config.prefix
     
     local output: {string} = {
         C("NOTE: Some of these commands use format", Color3.fromRGB(40, 110, 38)),
@@ -832,12 +861,10 @@ AddCommand(0, "cmds", "Display a list of basic commands", "<>", function(caller:
 
         if plrRank < cmd.MinimumRank then
             cmdArgs = C(E(cmd["Arguments"]), Color3.fromHex("#3b1212"))
-            -- FIXED: Use raw prefix, not escaped
             table.insert(output, `{C(prefix, Color3.fromHex("#491717"))}{C(cmdName, Color3.fromHex("#310000"))} {cmdArgs} {C(`- {cmdDescr}`, Color3.fromHex("#310000"))}`)
             continue
         end
 
-        -- FIXED: Use raw prefix, not escaped
         table.insert(output, `{C(prefix, Color3.fromHex("#738e99"))}{cmdName} {cmdArgs} - {cmdDescr}`)
     end
 
