@@ -78,7 +78,6 @@ local function getChatType(): string
         end
     end
     
-    -- Fallback check for legacy chat
     if game:GetService("Chat") then
         return "LegacyChat"
     end
@@ -110,7 +109,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     mainFrame.BackgroundTransparency = 1
     mainFrame.BorderSizePixel = 0
 
-    -- Fade in with size expansion
     local fadeInTween = TweenService:Create(mainFrame, FADE_IN_INFO, {
         BackgroundTransparency = 0,
         Size = UDim2.new(0, 400, 0, 400),
@@ -118,7 +116,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     })
     fadeInTween:Play()
 
-    -- Custom drag with smooth movement
     local dragDetector = Instance.new("UIDragDetector", mainFrame)
     dragDetector.ResponseStyle = Enum.ResponseStyle.Smooth
     dragDetector.DragFrame = mainFrame
@@ -159,7 +156,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         newLabel.TextTransparency = 1
         newLabel.Parent = innerFrame
 
-        -- Stagger the fade-in for each label
         local labelFadeInfo = TweenInfo.new(
             LABEL_FADE_INFO.Time,
             LABEL_FADE_INFO.EasingStyle,
@@ -174,7 +170,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         })
         labelFadeIn:Play()
 
-        -- Slide to final position after fade
         labelFadeIn.Completed:Connect(function()
             local slideToFinal = TweenService:Create(newLabel, 
                 TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -200,7 +195,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         searchBox.ClearTextOnFocus = true
         searchBox.BorderSizePixel = 0
 
-        -- Hover effect for search box
         searchBox.MouseEnter:Connect(function()
             TweenService:Create(searchBox, HOVER_INFO, {
                 BackgroundTransparency = 0.3
@@ -225,7 +219,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
             }):Play()
         end)
 
-        -- Animate search results
         searchBox:GetPropertyChangedSignal("Text"):Connect(function()
             local searchText = searchBox.Text:lower()
             
@@ -262,7 +255,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         end)
     end
 
-    -- Close button with animations
     local closeButton = Instance.new("TextButton", mainFrame)
     closeButton.TextSize = 18
     closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -275,7 +267,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     closeButton.BorderSizePixel = 0
     closeButton.ZIndex = 2
 
-    -- Hover effects for close button
     closeButton.MouseEnter:Connect(function()
         TweenService:Create(closeButton, HOVER_INFO, {
             BackgroundTransparency = 0.3,
@@ -292,7 +283,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         }):Play()
     end)
 
-    -- Fade out on close
     local isClosing = false
     closeButton.MouseButton1Click:Connect(function()
         if isClosing then return end
@@ -314,13 +304,11 @@ end
 
 print('Started initialization of YemAdmin')
 
--- DEBUG CODE TO WIPE
 if _G.yemdebug and _G.yem then
     _G.yem.eject()
     _G.yem = false
 end
 
--- cuz some people kept mapping it and i decided to be unfunny
 if not _G.yem then
     local yemEnv = {}
     local proxy = newproxy(true)
@@ -563,7 +551,6 @@ type Settings = {
 }
 local _G = _G :: Settings
 
--- Helper function to check if value exists in table
 local function tableFind(tbl: {any}, value: any): boolean
     if not tbl then return false end
     for _, v in ipairs(tbl) do
@@ -574,7 +561,6 @@ local function tableFind(tbl: {any}, value: any): boolean
     return false
 end
 
--- rewritten for multi-target
 local getPlyr = function(caller: Player, name: string)
     if not name then return {} end
     local _name = string.lower(name)
@@ -622,10 +608,11 @@ local getPlyr = function(caller: Player, name: string)
     return output
 end
 
+-- FIXED: E function now only escapes HTML, NOT ampersand
 function E(text: string)
     if not text then return "" end
-    return text:gsub('[&<>"\']', {
-        ['&'] = '&amp;',
+    -- Don't escape & to avoid breaking the prefix
+    return text:gsub('[<>"\']', {
         ['<'] = '&lt;',
         ['>'] = '&gt;',
         ['"'] = '&quot;',
@@ -712,7 +699,6 @@ local IssueCommand = function(caller: Player, command: string)
     Msg(caller, `'{command}' is not a valid command`)
 end
 
---clean events
 yemenv.events.PlayerSpawn:Connect(function(plr: Player, char: Model)
     if not plr or not char then return end
     local humanoid = char:FindFirstChild("Humanoid") :: Humanoid
@@ -729,23 +715,19 @@ yemenv.events.PlayerChatted:Connect(function(plr: Player, msg: string)
     end
 end)
 
--- Chat binding with support for both TextChatService and Legacy Chat
 local bindChatToPlyr = function(plyr: Player)
     if not plyr then return end
     
-    -- For TextChatService (new Roblox chat)
     if chatType == "TextChatService" then
         task.spawn(function()
             local chatConnection = TextChatService.OnIncomingMessage:Connect(function(message: TextChatMessage)
                 if not isRunning then return end
                 
-                -- Check if the message is from this player
                 if message.TextSource and message.TextSource.UserId == plyr.UserId then
                     yemenv.events.PlayerChatted:Fire(plyr, message.Text)
                 end
             end)
             
-            -- Clean up when player leaves
             table.insert(connections, plyr.AncestryChanged:Connect(function()
                 if not plyr:IsDescendantOf(Players) then
                     chatConnection:Disconnect()
@@ -753,7 +735,6 @@ local bindChatToPlyr = function(plyr: Player)
             end))
         end)
         
-    -- For Legacy Chat
     elseif chatType == "LegacyChat" then
         if _G.BindPlayerChatted then
             _G.BindPlayerChatted(plyr):Connect(function(msg: string)
@@ -761,7 +742,6 @@ local bindChatToPlyr = function(plyr: Player)
                 yemenv.events.PlayerChatted:Fire(plyr, msg)
             end)
         else
-            -- Fallback for legacy chat
             pcall(function()
                 plyr.Chatted:Connect(function(msg: string)
                     if not isRunning then return end
@@ -828,9 +808,11 @@ end)
 if not ss then warn(rr) end
 print('chat hooks')
 
---cmds
+-- FIXED: cmds command - prefix is NOT escaped with E()
 AddCommand(0, "cmds", "Display a list of basic commands", "<>", function(caller: Player)
     if not caller then return end
+    
+    local prefix = yemenv.config.prefix -- Get the raw prefix
     
     local output: {string} = {
         C("NOTE: Some of these commands use format", Color3.fromRGB(40, 110, 38)),
@@ -841,7 +823,6 @@ AddCommand(0, "cmds", "Display a list of basic commands", "<>", function(caller:
 
     local plrRank = GetRank(caller)
 
-    local prefix = yemenv.config.prefix
     for i, cmd in ipairs(commands) do
         if not cmd or not cmd.Name then continue end
         
@@ -851,10 +832,12 @@ AddCommand(0, "cmds", "Display a list of basic commands", "<>", function(caller:
 
         if plrRank < cmd.MinimumRank then
             cmdArgs = C(E(cmd["Arguments"]), Color3.fromHex("#3b1212"))
+            -- FIXED: Use raw prefix, not escaped
             table.insert(output, `{C(prefix, Color3.fromHex("#491717"))}{C(cmdName, Color3.fromHex("#310000"))} {cmdArgs} {C(`- {cmdDescr}`, Color3.fromHex("#310000"))}`)
             continue
         end
 
+        -- FIXED: Use raw prefix, not escaped
         table.insert(output, `{C(prefix, Color3.fromHex("#738e99"))}{cmdName} {cmdArgs} - {cmdDescr}`)
     end
 
@@ -1329,10 +1312,8 @@ AddCommand(Ranks.Special.Rank, "speak", "Speak as player" .. C("[F]", Color3.fro
     for i, target in ipairs(targets) do
         pcall(function()
             if chatType == "TextChatService" then
-                -- For TextChatService, send message through TextChatService
                 yemenv.runLua(target, `game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("{spoofText}")`)
             else
-                -- For legacy chat
                 yemenv.runLua(target, `game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("{spoofText}", "All")`)
             end
         end)
