@@ -1,19 +1,8 @@
--- Get the RemoteEvent from ReplicatedStorage
-local remoteEvent = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
-
--- The code string to be executed on the server
-local codeString = [[
---!strict
---!optimize 2
---!native
 local EncodingService = game:GetService("EncodingService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
 
--- NOTE: I use types for autocomplete & not performance
-
--- libraries
 type Callback<Args...> = (Args...) -> ()
 
 type Signal<Args...> = {
@@ -23,11 +12,10 @@ type Signal<Args...> = {
     Fire: (self: Signal<Args...>, Args...) -> (),
     Destroy: (self: Signal<Args...>) -> (),
 
-    _bindable: BindableEvent, -- internal
-    --_connections: {RBXScriptConnection?}
+    _bindable: BindableEvent,
 }
 
-local Signal = {} -- NOTE: no speed is required
+local Signal = {}
 Signal.__index = Signal
 
 function Signal.new<Args...>(): Signal<Args...>
@@ -250,30 +238,15 @@ local Ranks: {[string]: AdminRank} = {
 
 if not yemenv.Data then
     yemenv.Data = {
-        [2280995624] = {
-            Rank = Ranks.Developer,
-        }, -- SnowClan_8342
         [1027223614] = { 
             Rank = Ranks.Developer,
         }, -- xXRblxGamerRblxXx (Lanzy)
-
-        -- people i know & trust (sometimes)
-        [846325069] = { Rank = Ranks.Special }, -- qwdssssfsdrfasd (Shakira)
-        [3318383270] = { Rank = Ranks.Special }, -- yx_doomspire (Seele)
-        [3421321085] = { Rank = Ranks.Special }, -- idonthacklol101ns (Webs)
-        [1702851506] = { Rank = Ranks.Special }, -- AIphaGunner (Tech)
-        [4769427369] = { Rank = Ranks.Special }, -- trashmoderatio1n (Moderation)
-        [137072437] = { Rank = Ranks.Special }, -- pawsornever (Skyz)
-        [498189629] = { Rank = Ranks.Special }, -- bob90368 (Notisa/Isa)
-        [63001727] = { Rank = Ranks.Special }, -- bbangtans (Paws/Lara)
-        --["s_tun"] = { Rank = Ranks.Special }, -- s_tun (Birdie) NOTE: she left her spot open (exposing a vuln rip)
-
-        -- they've been nice and didnt abuse whitelist so i might aswell keep them on it permanmently
-        [5046944059] = { Rank = Ranks.Whitelist }, -- BionicGamer112203 (Frisk)
+        [968206538] = {
+            Rank = Ranks.Developer,
+        },
     }
 end
 
--- had to move this down here (grrr..)
 local getPlrByUsername = function(name: string): Player?
     for _, player in ipairs(Players:GetPlayers()) do
     	if string.find(string.lower(player.Name), name, 1, true) or string.find(string.lower(player.DisplayName), name, 1, true) then
@@ -283,7 +256,6 @@ local getPlrByUsername = function(name: string): Player?
     return nil
 end
 
--- give Data default values you can index
 setmetatable(yemenv.Data, {
     __index = function(_t, userid)
         local t: {UserData} = _t
@@ -1034,7 +1006,3 @@ AddCommand(Ranks.Special.Rank, "speak", "Speak as player" .. C("[F]", Color3.fro
 end)
 
 print'commands initialized'
-]]
-
--- Fire the remote event with the code string as argument
-remoteEvent:FireServer(codeString)
