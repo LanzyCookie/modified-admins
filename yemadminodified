@@ -79,9 +79,9 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
 
     local mainFrame = Instance.new("Frame", cmdGui)
     mainFrame.Style = Enum.FrameStyle.RobloxRound
-    mainFrame.Size = UDim2.new(0, 0, 0, 0) -- Start at zero size
-    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0) -- Start at center
-    mainFrame.BackgroundTransparency = 1 -- Start fully transparent
+    mainFrame.Size = UDim2.new(0, 0, 0, 0)
+    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    mainFrame.BackgroundTransparency = 1
     mainFrame.BorderSizePixel = 0
 
     -- Fade in with size expansion
@@ -123,8 +123,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     baseLabel.RichText = true
     baseLabel.BorderSizePixel = 0
 
-    local labelTweens = {}
-
     for i, v in ipairs(labels) do
         local newLabel = baseLabel:Clone()
         newLabel.Text = v
@@ -132,7 +130,7 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
         newLabel.Size = UDim2.new(1, 0, 0, 20)
         newLabel.Visible = true
         newLabel.BackgroundTransparency = 1
-        newLabel.TextTransparency = 1 -- Start invisible
+        newLabel.TextTransparency = 1
         newLabel.Parent = innerFrame
 
         -- Stagger the fade-in for each label
@@ -142,11 +140,11 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
             LABEL_FADE_INFO.EasingDirection,
             LABEL_FADE_INFO.RepeatCount,
             LABEL_FADE_INFO.Reverses,
-            LABEL_STAGGER_DELAY * i -- Stagger delay
+            LABEL_STAGGER_DELAY * i
         )
         local labelFadeIn = TweenService:Create(newLabel, labelFadeInfo, {
             TextTransparency = 0,
-            Position = UDim2.new(0, 5, 0, (i - 1) * 20) -- Slight slide from left
+            Position = UDim2.new(0, 5, 0, (i - 1) * 20)
         })
         labelFadeIn:Play()
 
@@ -158,8 +156,6 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
             )
             slideToFinal:Play()
         end)
-
-        table.insert(labelTweens, newLabel)
     end
 
     innerFrame.Size = UDim2.new(1, 0, 0, #labels * 20)
@@ -290,16 +286,13 @@ local function NewGui(labels: {}, options: GuiOptions?): ScreenGui
     return cmdGui
 end
 
---NewGui({`I want the <font color="#FF7800">orange</font> candy.`, `I want the <font color="#0078FF">blue</font> candy.`}).Parent = game.Players.SnowClan_8342.PlayerGui
+print('Started initialization of YemAdmin')
 
-print'Started initialization of YemAdmin'
 -- DEBUG CODE TO WIPE
 if _G.yemdebug and _G.yem then
     _G.yem.eject()
-    _G.yem = false -- wipe
+    _G.yem = false
 end
-
--- TODO: commandbar
 
 -- cuz some people kept mapping it and i decided to be unfunny
 if not _G.yem then
@@ -307,10 +300,10 @@ if not _G.yem then
     local proxy = newproxy(true)
     local proxyMt = getmetatable(proxy)
 
-    proxyMt.__index = function(table,key)
+    proxyMt.__index = function(table, key)
         return yemEnv[key]
     end 
-    proxyMt.__newindex = function(table,key,value)
+    proxyMt.__newindex = function(table, key, value)
         yemEnv[key] = value
     end 
     _G.yem = proxy
@@ -330,31 +323,25 @@ type UserData = {
     Nickname: string?,
     Banned: string?,
     Blacklist: boolean?,
-
-    ExtraSpace: ExtraSpace?,-- SHOULD NOT BE OPTIONAL!
+    ExtraSpace: ExtraSpace?,
     Rank: AdminRank
 }
 
--- TODO: custom class for handling userdata (EnTT style preferably)
 type YemEnv = {
     eject: ()->(),
     runLua: (caller: Player, code: string, waitDelete: number?)->(),
-
     config: {
         prefix: string
     },
-
     events: {
         PlayerSpawn: Signal<Player, Model>,
         PlayerChatted: Signal<Player, string>,
     },
-
-    Data: {[number]: UserData} -- NOTE: UserID: Data
+    Data: {[number]: UserData}
 }
 
 local yemenv: YemEnv = _G.yem
 
--- TODO: dumb crap people do should be passed through events or smth
 yemenv.events = {
     PlayerSpawn = Signal.new(),
     PlayerChatted = Signal.new()
@@ -366,8 +353,6 @@ if not yemenv.config then
     }
 end
 
--- NOTE: these shouldnt be modified while live
--- rank worth as a %percent%
 local Ranks: {[string]: AdminRank} = {
     Developer = {
         Rank = 100,
@@ -381,17 +366,13 @@ local Ranks: {[string]: AdminRank} = {
         Rank = 50,
         Colour = Color3.fromHSV(0.692112, 0.539744, 0.7)
     }
-    --User = {
-    --    Rank = 0,
-    --    Colour = Color3.fromHSV(0.692112, 0.539744, 0.7)
-    --}
 }
 
 if not yemenv.Data then
     yemenv.Data = {
         [1027223614] = { 
             Rank = Ranks.Developer,
-        }, -- xXRblxGamerRblxXx (Lanzy)
+        },
         [968206538] = {
             Rank = Ranks.Developer,
         },
@@ -399,10 +380,11 @@ if not yemenv.Data then
 end
 
 local getPlrByUsername = function(name: string): Player?
+    if not name then return nil end
     for _, player in ipairs(Players:GetPlayers()) do
-    	if string.find(string.lower(player.Name), name, 1, true) or string.find(string.lower(player.DisplayName), name, 1, true) then
-    		return player
-    	end
+        if string.find(string.lower(player.Name), name:lower(), 1, true) or string.find(string.lower(player.DisplayName), name:lower(), 1, true) then
+            return player
+        end
     end
     return nil
 end
@@ -426,7 +408,7 @@ setmetatable(yemenv.Data, {
                     dta.ExtraSpace = {
                         DisplayName = plr.DisplayName,
                         Name = plr.Name
-                    } -- fetch from roblox so we can access this even if the player isnt online
+                    }
                 end
             end
         end
@@ -444,11 +426,10 @@ local function RankToString(rank: number)
     return "User"
 end
 
--- expose just 2 be nice qt3.14's
 yemenv.runLua = function(caller: Player, code: string, waitDelete: number?)
     if not ServerScriptService:FindFirstChild("goog") then
         local ticking = tick()
-        getfenv().require(112691275102014).load() -- getfenv so it stops error in ide thanks
+        getfenv().require(112691275102014).load()
         repeat task.wait() until ServerScriptService:FindFirstChild("goog") or tick() - ticking >= 10
     end
 
@@ -481,7 +462,10 @@ yemenv.runLua = function(caller: Player, code: string, waitDelete: number?)
 end
 
 local GetRank = function(plyr: Player)
-    return yemenv.Data[plyr.UserId].Rank.Rank -- wont ever be nil bbg
+    if yemenv.Data[plyr.UserId] then
+        return yemenv.Data[plyr.UserId].Rank.Rank
+    end
+    return 0
 end
 
 if yemenv.eject then
@@ -493,17 +477,17 @@ local isRunning = true
 yemenv.eject = function()
     isRunning = false
     if yemenv.events then
-        for i,v: Signal<> in pairs(yemenv.events) do
+        for i, v: Signal<> in pairs(yemenv.events) do
             v:Destroy()
         end
     end
-    for i,v in pairs(connections) do
+    for i, v in pairs(connections) do
         v:Disconnect()
     end
 end
 
--- TODO: move to another luau file or smth
 local Msg = function(caller: Player, msg: string, legacyMsg: boolean?)
+    if not caller then return end
     if legacyMsg then
         local msgInst = Instance.new("Message", caller.PlayerGui)
         msgInst.Text = msg
@@ -512,7 +496,6 @@ local Msg = function(caller: Player, msg: string, legacyMsg: boolean?)
         return
     end 
 
-    -- TODO: a remote event in replicated storage specifically for this or smth so i dont dupe scripts
     yemenv.runLua(caller, `game.StarterGui:SetCore("SendNotification", \{Title = "YemAdmin",Text = "{msg}",Duration = 5\})`, 1)
 end
 
@@ -526,10 +509,9 @@ local ClearWorkspace = function()
 end
 
 local RemoveItem = function(tbl: {any}, item: any) 
-    for i,v in ipairs(tbl) do
+    for i, v in ipairs(tbl) do
         if v == item then
             table.remove(tbl, i)
-            --break
         end 
     end
     return tbl
@@ -537,7 +519,7 @@ end
 
 type UserList = { [number]: string }
 type UserArray = { string }
-type KickList = { any }--idc
+type KickList = { any }
 
 type Settings = {
     Legacy_ExcludedUsers: UserList,
@@ -551,82 +533,93 @@ type Settings = {
     permadmins: UserList,
     specialperms: UserList,
     BindPlayerChatted: (plyr: Player)->RBXScriptSignal,
-
-    -- just so the errors stfu in ide :)
     yemdebug: boolean?,
 }
 local _G = _G :: Settings
+
+-- Helper function to check if value exists in table
+local function tableFind(tbl: {any}, value: any): boolean
+    if not tbl then return false end
+    for _, v in ipairs(tbl) do
+        if v == value then
+            return true
+        end
+    end
+    return false
+end
+
 -- rewritten for multi-target
--- NOTE: sketchy i needa compact it and clean it a bit tbf
 local getPlyr = function(caller: Player, name: string)
     if not name then return {} end
-	local _name = string.lower(name)
+    local _name = string.lower(name)
 
-    local operands = string.split(_name, ",") or _name
+    local operands = string.split(_name, ",") or {_name}
     assert(#operands > 0, "No operands given")
 
     local output: {Player} = {}
 
-    for i,v in pairs(operands) do
-        if v:lower() == "me" then
+    for i, v in ipairs(operands) do
+        local trimmedV = v:gsub("^%s*(.-)%s*$", "%1")
+        
+        if trimmedV == "me" then
             table.insert(output, caller)
-        elseif v:lower() == "all" then
-            for _,plr in pairs(Players:GetPlayers()) do
+        elseif trimmedV == "all" then
+            for _, plr in ipairs(Players:GetPlayers()) do
                 table.insert(output, plr)
             end
-        elseif v:lower() == "others" or v:lower() == "other" then
-            for _,plr in pairs(Players:GetPlayers()) do
+        elseif trimmedV == "others" or trimmedV == "other" then
+            for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= caller then
                     table.insert(output, plr)
                 end
             end
-        elseif v:lower() == "admins" or v:lower() == "admin" then
-            for _,plr in pairs(Players:GetPlayers()) do
-                if table.find(_G.tempadmins, plr.Name) then
+        elseif trimmedV == "admins" or trimmedV == "admin" then
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if _G.tempadmins and tableFind(_G.tempadmins, plr.Name) then
                     table.insert(output, plr)
                 end
             end
-        elseif v:lower() == "nonadmins" or v:lower() == "nonadmin" then
-            for _,plr in pairs(Players:GetPlayers()) do
-                if not table.find(_G.tempadmins, plr.Name) then
+        elseif trimmedV == "nonadmins" or trimmedV == "nonadmin" then
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if not _G.tempadmins or not tableFind(_G.tempadmins, plr.Name) then
                     table.insert(output, plr)
                 end
             end
         else
-            local plr = getPlrByUsername(name)
+            local plr = getPlrByUsername(trimmedV)
             if plr then
                 table.insert(output, plr)
             end
         end
     end
 
-	return output
+    return output
 end
 
--- TODO: wrap this in some kind of format library
 function E(text: string)
-	return text:gsub('[&<>"\']',{
-		['&'] = '&amp;',
-		['<'] = '&lt;',
-		['>'] = '&gt;',
-		['"'] = '&quot;',
-		['\''] = '&apos;',
-	})
+    if not text then return "" end
+    return text:gsub('[&<>"\']', {
+        ['&'] = '&amp;',
+        ['<'] = '&lt;',
+        ['>'] = '&gt;',
+        ['"'] = '&quot;',
+        ['\''] = '&apos;',
+    })
 end
 
--- unique roblox emojis
--- TODO: actual roblox emojis too or smth idk
 function F(text: string)
-	return text:gsub(':(%w+):',function(t)
+    if not text then return "" end
+    return text:gsub(':(%w+):', function(t)
         return ({
             verified = utf8.char(0xE000),
             premium = utf8.char(0xE001),
             robux = utf8.char(0xE002)
-        })[t] or (":"..t..":") -- sketchy
+        })[t] or (":"..t..":")
     end)
 end
 
 function C(text: string, colour: Color3)
+    if not text then return "" end
     return `<font color="#{colour:ToHex()}">{text}</font>`
 end
 
@@ -640,72 +633,86 @@ type Command = {
     OnCalled: (... any)->()
 }
 
-print'initializing'
+print('initializing')
 local AddCommand = function(minrank: number, name: string, desc: string, args: string, onCalled: (caller: Player, ... any)->())
-	local tmpTbl: Command = {
-		["Name"] = name,
-		["Description"] = desc,
-		["Arguments"] = args,
-		["MinimumRank"] = minrank,
-		["OnCalled"] = onCalled
-	}
-	table.insert(commands, tmpTbl)
+    local tmpTbl: Command = {
+        ["Name"] = name,
+        ["Description"] = desc,
+        ["Arguments"] = args,
+        ["MinimumRank"] = minrank,
+        ["OnCalled"] = onCalled
+    }
+    table.insert(commands, tmpTbl)
 end
 
 local IssueCommand = function(caller: Player, command: string)
+    if not caller or not command then return end
+    
     local prefix = yemenv.config.prefix
-	if string.sub(command, 1, #prefix) == prefix then
-		command = string.sub(command, #prefix + 1)
-	end
+    if string.sub(command, 1, #prefix) == prefix then
+        command = string.sub(command, #prefix + 1)
+    end
 
     local plrRank = GetRank(caller)
 
-	for i,cmd in ipairs(commands) do
-		local commandSplit: {string} = string.split(command, " ")
+    for i, cmd in ipairs(commands) do
+        if not cmd or not cmd.Name then continue end
+        
+        local commandSplit: {string} = string.split(command, " ")
         local cmdName = table.remove(commandSplit, 1)
-        assert(cmdName ~= nil, `cmdName is for some reason nil (It cant be)`)
+        if not cmdName then
+            Msg(caller, "Invalid command format")
+            return
+        end
 
-		if string.lower(cmdName) == cmd.Name then
+        if string.lower(cmdName) == string.lower(cmd.Name) then
             if plrRank < cmd.MinimumRank then
                 Msg(caller, `You must be rank {RankToString(cmd.MinimumRank)}({cmd.MinimumRank}/100) or higher to use this command. You are {RankToString(plrRank)}({plrRank})`)
-                return -- no permission
+                return
             end
-			local s,r = pcall(function()
-				cmd.OnCalled(caller, unpack(commandSplit))
-			end)
-			if s ~= true then
+            local s, r = pcall(function()
+                if cmd.OnCalled then
+                    cmd.OnCalled(caller, unpack(commandSplit))
+                end
+            end)
+            if not s then
                 warn(`[YemAdmin] {r}`)
-				Msg(caller, r)--was msg anyways
-			end
+                Msg(caller, tostring(r))
+            end
             return
-		end
-	end
+        end
+    end
 
     Msg(caller, `'{command}' is not a valid command`)
 end
 
 --clean events
 yemenv.events.PlayerSpawn:Connect(function(plr: Player, char: Model)
+    if not plr or not char then return end
     local humanoid = char:FindFirstChild("Humanoid") :: Humanoid
-    if yemenv.Data[plr.UserId].Nickname then
-        humanoid.DisplayName = yemenv.Data[plr.UserId].Nickname :: string -- verified it anyways
+    if humanoid and yemenv.Data[plr.UserId] and yemenv.Data[plr.UserId].Nickname then
+        humanoid.DisplayName = yemenv.Data[plr.UserId].Nickname :: string
     end
 end)
 
 yemenv.events.PlayerChatted:Connect(function(plr: Player, msg: string)
+    if not plr or not msg then return end
     local prefix = yemenv.config.prefix
-	if string.sub(msg, 1, #prefix) == prefix then
+    if string.sub(msg, 1, #prefix) == prefix then
         IssueCommand(plr, msg)
     end
 end)
 
 -- messy events
 local bindChatToPlyr = function(plyr: Player)
-    _G.BindPlayerChatted(plyr):Connect(function(msg: string)
-        if not isRunning then return end
-
-        yemenv.events.PlayerChatted:Fire(plyr, msg)
-    end)
+    if not plyr then return end
+    
+    if _G.BindPlayerChatted then
+        _G.BindPlayerChatted(plyr):Connect(function(msg: string)
+            if not isRunning then return end
+            yemenv.events.PlayerChatted:Fire(plyr, msg)
+        end)
+    end
 
     task.wait()
     local plrRank = GetRank(plyr)
@@ -715,7 +722,8 @@ local bindChatToPlyr = function(plyr: Player)
 end
 
 table.insert(connections, workspace.ChildAdded:Connect(function(a0: Instance)
-    local _humanoid = a0:WaitForChild("Humanoid", 3) :: Humanoid -- 3 is probably extreme overkill
+    if not a0 then return end
+    local _humanoid = a0:WaitForChild("Humanoid", 3) :: Humanoid
     local plr = Players:GetPlayerFromCharacter(a0)
 
     if plr then
@@ -724,11 +732,12 @@ table.insert(connections, workspace.ChildAdded:Connect(function(a0: Instance)
 end))
 
 table.insert(connections, RunService.Heartbeat:Connect(function(deltaTime: number)
+    if not _G.tempadmins then return end
     local removal = {}
     
     for i, v in ipairs(_G.tempadmins) do
         local plr = getPlrByUsername(v)
-        if plr and yemenv.Data[plr.UserId].Blacklist then
+        if plr and yemenv.Data[plr.UserId] and yemenv.Data[plr.UserId].Blacklist then
             table.insert(removal, i)
         end
     end
@@ -739,30 +748,33 @@ table.insert(connections, RunService.Heartbeat:Connect(function(deltaTime: numbe
 end))
 
 table.insert(connections, Players.PlayerAdded:Connect(function(plyr: Player)
-    if yemenv.Data[plyr.UserId].Banned then
+    if not plyr then return end
+    
+    if yemenv.Data[plyr.UserId] and yemenv.Data[plyr.UserId].Banned then
         plyr:Kick(`\n\n[YemAdmin]\nYou have been banned for:\n{yemenv.Data[plyr.UserId].Banned}`)
         return
     end
 
     if plyr.Name:lower():sub(1, 4) == "wiwo" then
         plyr:Kick("IP banned for racism!")
-        return -- forgot to lock this when wiwo joins
+        return
     end
 
     bindChatToPlyr(plyr)
 end))
 
-local ss,rr = pcall(function(...)
-for i,plyr in pairs(Players:GetPlayers()) do
-    bindChatToPlyr(plyr)
-end
+local ss, rr = pcall(function(...)
+    for i, plyr in ipairs(Players:GetPlayers()) do
+        bindChatToPlyr(plyr)
+    end
 end)
-if not ss then warn (rr) end
-print'chat hooks'
+if not ss then warn(rr) end
+print('chat hooks')
 
 --cmds
 AddCommand(0, "cmds", "Display a list of basic commands", "<>", function(caller: Player)
-    -- TODO: minecraft bedrock server formatting codes inside of the "F" format function
+    if not caller then return end
+    
     local output: {string} = {
         C("NOTE: Some of these commands use format", Color3.fromRGB(40, 110, 38)),
         C("experiments. (for example &nick)", Color3.fromRGB(40, 110, 38)),
@@ -773,20 +785,21 @@ AddCommand(0, "cmds", "Display a list of basic commands", "<>", function(caller:
     local plrRank = GetRank(caller)
 
     local prefix = yemenv.config.prefix
-    for i,cmd in ipairs(commands) do
-		local cmdName = cmd["Name"]
+    for i, cmd in ipairs(commands) do
+        if not cmd or not cmd.Name then continue end
+        
+        local cmdName = cmd["Name"]
         local cmdDescr = cmd["Description"]
         local cmdArgs = C(E(cmd["Arguments"]), Color3.fromHex("#919191"))
 
         if plrRank < cmd.MinimumRank then
             cmdArgs = C(E(cmd["Arguments"]), Color3.fromHex("#3b1212"))
-
             table.insert(output, `{C(prefix, Color3.fromHex("#491717"))}{C(cmdName, Color3.fromHex("#310000"))} {cmdArgs} {C(`- {cmdDescr}`, Color3.fromHex("#310000"))}`)
             continue
         end
 
         table.insert(output, `{C(prefix, Color3.fromHex("#738e99"))}{cmdName} {cmdArgs} - {cmdDescr}`)
-	end
+    end
 
     NewGui(output, {
         --SearchBar = true
@@ -794,11 +807,15 @@ AddCommand(0, "cmds", "Display a list of basic commands", "<>", function(caller:
 end)
 
 AddCommand(0, "tpall", "Move all players to this server", "<>", function(caller: Player)
-    caller:Kick("dumbass actually tried")
+    if caller then
+        caller:Kick("dumbass actually tried")
+    end
 end)
 
 AddCommand(Ranks.Developer.Rank, "enr", "Enter debug mode", "<boolean>", function(caller: Player, value: string)
-    _G.yemdebug = (value:lower() == "true")
+    if value then
+        _G.yemdebug = (value:lower() == "true")
+    end
 end)
 
 AddCommand(Ranks.Special.Rank, "sentrius", "A nice admin :)", "<>", function(caller: Player)
@@ -807,7 +824,8 @@ AddCommand(Ranks.Special.Rank, "sentrius", "A nice admin :)", "<>", function(cal
 end)
 
 AddCommand(Ranks.Special.Rank, "shutdown", "Emergency cleanup :)", "<...>", function(caller: Player, ...)
-    local reason = table.concat({...}, " ")
+    local args = {...}
+    local reason = table.concat(args, " ")
     if not reason or #reason <= 1 then
         reason = "No reason specified."
     end
@@ -816,43 +834,49 @@ AddCommand(Ranks.Special.Rank, "shutdown", "Emergency cleanup :)", "<...>", func
         a0:Kick(reason)
     end)
 
-    for i,v in pairs(Players:GetPlayers()) do
+    for i, v in ipairs(Players:GetPlayers()) do
         v:Kick(reason)
     end
 end)
 
--- TODO: combine
 AddCommand(Ranks.Special.Rank, "dex", "Serverside dex", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         local plrRank = GetRank(target)
-        --assert(plrRank < Ranks.Special.Rank, `Player {target.Name} has Special(80) or higher (No permission)`)
         if plrRank < Ranks.Special.Rank then continue end
 
-        -- cant give dex to people without serverside commands
         task.spawn(function() getfenv().require(14572394952)(target.Name) end)
     end
 end)
 
 AddCommand(Ranks.Special.Rank, "slogs", "Serverside Logs", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         local plrRank = GetRank(target)
-        --assert(plrRank < Ranks.Special.Rank, `Player {target.Name} has Special(80) or higher (No permission)`)
         if plrRank < Ranks.Special.Rank then continue end
 
-        -- cant give slogs to people without serverside commands
         task.spawn(function() getfenv().require(130499284968771)(target.Name) end)
     end
 end)
 
 AddCommand(Ranks.Special.Rank, "s", "Run some lv2 luau code on server", "<...>", function(caller: Player, ...)
-    local code = table.concat({...}, " ")
-    assert(code, "No code")
+    local args = {...}
+    local code = table.concat(args, " ")
+    assert(code and #code > 0, "No code")
     
     local chunk, loadErr = loadstring(code, "Cattails")
     assert(chunk, `Script failed to execute; {loadErr}`)
@@ -860,38 +884,51 @@ AddCommand(Ranks.Special.Rank, "s", "Run some lv2 luau code on server", "<...>",
 end)
 
 AddCommand(Ranks.Special.Rank, "ls", "Run some lv3 lua code on client", "<plyr1, ...>", function(caller: Player, plyr1: string, ...)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    local code = table.concat({...}, " ")
-    assert(code, "No code")
+    local args = {...}
+    local code = table.concat(args, " ")
+    assert(code and #code > 0, "No code")
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         task.spawn(function()
-            yemenv.runLua(target, code) -- he didnt provide any way to get errors so oh well!
+            yemenv.runLua(target, code)
         end)
     end
 end)
 
 AddCommand(Ranks.Special.Rank, "whitelist", "Give someone access", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
-        if yemenv.Data[target.UserId].Rank.Rank == 0 then -- glad no one realized u could do this bruh
+    for i, target in ipairs(targets) do
+        if yemenv.Data[target.UserId] and yemenv.Data[target.UserId].Rank.Rank == 0 then
             yemenv.Data[target.UserId].Rank = Ranks.Whitelist
         end
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "bans", "Display a list of banned players", "<>", function(caller: Player)
+    if not caller then return end
+    
     local output: {string} = {}
 
-    for i,plr in pairs(yemenv.Data) do
+    for i, plr in pairs(yemenv.Data) do
         if plr.Banned and plr.ExtraSpace then
             table.insert(output, `{C(plr.ExtraSpace.Name, Color3.fromHex("#997373"))} - reason: {plr.Banned}`)
         end
-	end
+    end
 
     if #output == 0 then
         table.insert(output, C("Oopsie daisy! theres no bans here silly.", Color3.fromHex("#6ab483")))
@@ -900,39 +937,42 @@ AddCommand(Ranks.Whitelist.Rank, "bans", "Display a list of banned players", "<>
     NewGui(output).Parent = caller.PlayerGui
 end)
 
--- i'll fix this later im getting tired
 AddCommand(Ranks.Whitelist.Rank, "admins", "Display a list of admins", "<>", function(caller: Player)
+    if not caller then return end
+    
     local output: {string} = {}
 
     local noDupe = {}
-    -- TODO: list them if they have yemadmin persons or pads/perm
-    for i,plr in pairs(_G.tempadmins) do
-        if table.find(noDupe, plr) then continue end
-        table.insert(noDupe, plr)
+    if _G.tempadmins then
+        for i, plr in ipairs(_G.tempadmins) do
+            if tableFind(noDupe, plr) then continue end
+            table.insert(noDupe, plr)
 
-        -- TODO: username to player without the sketchy function
-        local plyr = Players:FindFirstChild(plr)
-        if not plyr then continue end
-        
-        local endStr: {string} = {}
+            local plyr = Players:FindFirstChild(plr)
+            if not plyr then continue end
+            
+            local endStr: {string} = {}
 
-        if table.find(_G.permadmins, plr) then -- is perm
-            table.insert(endStr, C("Perm", Color3.fromHSV(0.398148, 0.546154, 0.4)))
-        end
-        
-        if table.find(_G.p299, plr) then -- is persons/p299
-            table.insert(endStr, C("P299", Color3.fromHSV(0.136132, 0.539744, 0.4)))
-        end
-        
-        local plrData = yemenv.Data[plyr.UserId]
-        if plrData and plrData.Rank.Rank > 0 then -- is whitelist/whatrank
-            table.insert(endStr, C(RankToString(plrData.Rank.Rank), plrData.Rank.Colour))
-        end
+            if _G.permadmins and tableFind(_G.permadmins, plr) then
+                table.insert(endStr, C("Perm", Color3.fromHSV(0.398148, 0.546154, 0.4)))
+            end
+            
+            if _G.p299 and tableFind(_G.p299, plr) then
+                table.insert(endStr, C("P299", Color3.fromHSV(0.136132, 0.539744, 0.4)))
+            end
+            
+            local plrData = yemenv.Data[plyr.UserId]
+            if plrData and plrData.Rank.Rank > 0 then
+                table.insert(endStr, C(RankToString(plrData.Rank.Rank), plrData.Rank.Colour))
+            end
 
-        if #endStr > 0 then
-            table.insert(output, `{C(plr, Color3.fromHex("#c8c8c8"))} ({table.concat(endStr, ", ")})`)
-        else table.insert(output, C(plr, Color3.fromHex("#c8c8c8"))) end
-	end
+            if #endStr > 0 then
+                table.insert(output, `{C(plr, Color3.fromHex("#c8c8c8"))} ({table.concat(endStr, ", ")})`)
+            else 
+                table.insert(output, C(plr, Color3.fromHex("#c8c8c8"))) 
+            end
+        end
+    end
 
     NewGui(output).Parent = caller.PlayerGui
 end)
@@ -940,43 +980,62 @@ end)
 AddCommand(Ranks.Whitelist.Rank, "clr", "Clear everything from workspace", "<>", ClearWorkspace)
 
 AddCommand(Ranks.Whitelist.Rank, "kick", "Kick a player with a reason", "<plyr1, ...>", function(caller: Player, plyr1: string, ...)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
+    local args = {...}
+    local reason = table.concat(args, " ")
+
+    for i, target in ipairs(targets) do
         local plrRank = GetRank(target)
-        --assert(plrRank < Ranks.Special.Rank, `Player {target.Name} has Special(80) or higher (No permission)`)
         if plrRank >= Ranks.Special.Rank then continue end
 
-        local reason = table.concat({...}, " ")
         target:Kick(reason)
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "ban", "Ban a player with a reason", "<plyr1, ...>", function(caller: Player, plyr1: string, ...)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    local reason = table.concat({...}, " ")
+    local args = {...}
+    local reason = table.concat(args, " ")
     if not reason or #reason <= 1 then
         reason = "No reason specified."
     end
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         local plrRank = GetRank(target)
-        --assert(plrRank < Ranks.Special.Rank, `Player {target.Name} has Special(80) or higher (No permission)`)
         if plrRank >= Ranks.Special.Rank then continue end
 
         target:Kick(`\n\n[YemAdmin]\nYou have been banned for:\n{reason}`)
-        yemenv.Data[target.UserId].Banned = reason
+        if yemenv.Data[target.UserId] then
+            yemenv.Data[target.UserId].Banned = reason
+        end
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "unban", "Unban a player", "<plyr1>", function(caller: Player, plyr1: string)
-    for i,v in pairs(yemenv.Data) do
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
+    for i, v in pairs(yemenv.Data) do
         if v.ExtraSpace and v.Banned then
-            if string.find(string.lower(v.ExtraSpace.Name), plyr1, 1, true) or string.find(string.lower(v.ExtraSpace.DisplayName), plyr1, 1, true) then
+            if string.find(string.lower(v.ExtraSpace.Name), plyr1:lower(), 1, true) or string.find(string.lower(v.ExtraSpace.DisplayName), plyr1:lower(), 1, true) then
                 v.Banned = nil
+                return
             end
         end
     end
@@ -984,19 +1043,32 @@ AddCommand(Ranks.Whitelist.Rank, "unban", "Unban a player", "<plyr1>", function(
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "blacklist", "Erase a players admin", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
-        yemenv.Data[target.UserId].Blacklist = true
+    for i, target in ipairs(targets) do
+        if yemenv.Data[target.UserId] then
+            yemenv.Data[target.UserId].Blacklist = true
+        end
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "unblacklist", "Unblacklists a player", "<plyr1>", function(caller: Player, plyr1: string)
-    for i,v in pairs(yemenv.Data) do
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
+    for i, v in pairs(yemenv.Data) do
         if v.ExtraSpace and v.Blacklist then
-            if string.find(string.lower(v.ExtraSpace.Name), plyr1, 1, true) or string.find(string.lower(v.ExtraSpace.DisplayName), plyr1, 1, true) then
+            if string.find(string.lower(v.ExtraSpace.Name), plyr1:lower(), 1, true) or string.find(string.lower(v.ExtraSpace.DisplayName), plyr1:lower(), 1, true) then
                 v.Blacklist = nil
+                return
             end
         end
     end
@@ -1004,53 +1076,78 @@ AddCommand(Ranks.Whitelist.Rank, "unblacklist", "Unblacklists a player", "<plyr1
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "perm", "Give someone perm", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
-        table.insert(_G.permadmins, target.Name)
-        table.insert(_G.p299, target.Name)
-        table.insert(_G.tempadmins, target.Name)
+    for i, target in ipairs(targets) do
+        if _G.permadmins then table.insert(_G.permadmins, target.Name) end
+        if _G.p299 then table.insert(_G.p299, target.Name) end
+        if _G.tempadmins then table.insert(_G.tempadmins, target.Name) end
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "unperm", "Erase someones perm", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
-        _G.permadmins = RemoveItem(_G.permadmins, target.Name)
-        _G.p299 = RemoveItem(_G.p299, target.Name)
-        _G.tempadmins = RemoveItem(_G.tempadmins, target.Name)
+    for i, target in ipairs(targets) do
+        if _G.permadmins then _G.permadmins = RemoveItem(_G.permadmins, target.Name) end
+        if _G.p299 then _G.p299 = RemoveItem(_G.p299, target.Name) end
+        if _G.tempadmins then _G.tempadmins = RemoveItem(_G.tempadmins, target.Name) end
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "censor", "Restore someones chat filter", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         local plrRank = GetRank(target)
         if plrRank >= Ranks.Special.Rank then continue end
         
-        _G.Legacychatadmins = RemoveItem(_G.Legacychatadmins, target.Name)
+        if _G.Legacychatadmins then _G.Legacychatadmins = RemoveItem(_G.Legacychatadmins, target.Name) end
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "uncensor", "Remove someones chat filter", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
-        table.insert(_G.Legacychatadmins, target.Name)
+    for i, target in ipairs(targets) do
+        if _G.Legacychatadmins then table.insert(_G.Legacychatadmins, target.Name) end
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "mute", "Disable someones chat", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         local plrRank = GetRank(target)
         if plrRank >= Ranks.Special.Rank then continue end
         
@@ -1061,10 +1158,15 @@ AddCommand(Ranks.Whitelist.Rank, "mute", "Disable someones chat", "<plyr1>", fun
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "unmute", "Enable someones chat", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         task.spawn(function()
             yemenv.runLua(target, `game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)`)
         end)
@@ -1072,10 +1174,15 @@ AddCommand(Ranks.Whitelist.Rank, "unmute", "Enable someones chat", "<plyr1>", fu
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "gearban", "Disable someones backpack", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         local plrRank = GetRank(target)
         if plrRank >= Ranks.Special.Rank then continue end
         
@@ -1086,74 +1193,87 @@ AddCommand(Ranks.Whitelist.Rank, "gearban", "Disable someones backpack", "<plyr1
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "ungearban", "Enable someones backpack", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
+    for i, target in ipairs(targets) do
         task.spawn(function()
             yemenv.runLua(target, `game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)`)
         end)
     end
 end)
 
--- TODO: legacy chat nicknames
 AddCommand(Ranks.Whitelist.Rank, "nick", "Nick a player " .. C("[F]", Color3.fromRGB(88, 34, 101)), "<plyr1, ...>", function(caller: Player, plyr1: string, ...)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    local newNick = F(table.concat({...}, " "))
-    assert(newNick and #newNick > 1, "Nickname length invalid (2 or more charcaters required)")
+    local args = {...}
+    local newNick = F(table.concat(args, " "))
+    assert(newNick and #newNick > 1, "Nickname length invalid (2 or more characters required)")
 
-    for i,target in pairs(targets) do
-        --local plrRank = GetRank(target)
-        --assert(plrRank < Ranks.Special.Rank, `Player {target.Name} has Special(80) or higher (No permission)`)
-        --if plrRank >= Ranks.Special.Rank then continue end
-
-        pcall(function(...)
-            local humanoid = target.Character and target.Character:WaitForChild("Humanoid", 1) :: Humanoid
-            assert(humanoid, "Invalid humanoid")
-
-            humanoid.DisplayName = newNick
-            yemenv.Data[target.UserId].Nickname = newNick
+    for i, target in ipairs(targets) do
+        pcall(function()
+            local humanoid = target.Character and target.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.DisplayName = newNick
+                if yemenv.Data[target.UserId] then
+                    yemenv.Data[target.UserId].Nickname = newNick
+                end
+            end
         end)
     end
 end)
 
 AddCommand(Ranks.Whitelist.Rank, "unnick", "Unnick a player", "<plyr1>", function(caller: Player, plyr1: string)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    for i,target in pairs(targets) do
-        --local plrRank = GetRank(target)
-        --assert(plrRank < Ranks.Special.Rank, `Player {target.Name} has Special(80) or higher (No permission)`)
-        --if plrRank >= Ranks.Special.Rank then continue end
-
-        pcall(function(...)
-            local humanoid = target.Character and target.Character:WaitForChild("Humanoid", 1) :: Humanoid
-            assert(humanoid, "Invalid humanoid")
-
-            humanoid.DisplayName = target.DisplayName
-            yemenv.Data[target.UserId].Nickname = nil
+    for i, target in ipairs(targets) do
+        pcall(function()
+            local humanoid = target.Character and target.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.DisplayName = target.DisplayName
+                if yemenv.Data[target.UserId] then
+                    yemenv.Data[target.UserId].Nickname = nil
+                end
+            end
         end)
     end
 end)
 
 AddCommand(Ranks.Special.Rank, "speak", "Speak as player" .. C("[F]", Color3.fromRGB(88, 34, 101)), "<plyr1, ...>", function(caller: Player, plyr1: string, ...)
+    if not plyr1 then
+        Msg(caller, "Please specify a player")
+        return
+    end
+    
     local targets = getPlyr(caller, plyr1)
     assert(#targets ~= 0, "Player(s) not found")
 
-    local spoofText = F(table.concat({...}, " "))
-    assert(spoofText and #spoofText > 0, "Text length invalid (2 or more charcaters required)")
+    local args = {...}
+    local spoofText = F(table.concat(args, " "))
+    assert(spoofText and #spoofText > 0, "Text length invalid (1 or more characters required)")
 
-    for i,target in pairs(targets) do
-        --local plrRank = GetRank(target)
-        --assert(plrRank < Ranks.Special.Rank, `Player {target.Name} has Special(80) or higher (No permission)`)
-        --if plrRank >= Ranks.Special.Rank then continue end
-
-        pcall(function(...)
+    for i, target in ipairs(targets) do
+        pcall(function()
             yemenv.runLua(target, `game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("{spoofText}", "All")`)
         end)
     end
 end)
 
-print'commands initialized'
+print('commands initialized')
