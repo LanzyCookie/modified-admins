@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
 local TweenService = game:GetService("TweenService")
+local TextChatService = game:GetService("TextChatService")
 
 type Callback<Args...> = (Args...) -> ()
 
@@ -62,6 +63,31 @@ local LABEL_STAGGER_DELAY = 0.03
 local LABEL_FADE_INFO = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0)
 local SEARCH_FADE_INFO = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0)
 local SEARCH_HIDE_INFO = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 0)
+
+-- Chat detection
+local function getChatType(): string
+    local success, result = pcall(function()
+        return TextChatService.ChatVersion
+    end)
+    
+    if success then
+        if result == Enum.ChatVersion.TextChatService then
+            return "TextChatService"
+        elseif result == Enum.ChatVersion.LegacyChatService then
+            return "LegacyChat"
+        end
+    end
+    
+    -- Fallback check for legacy chat
+    if game:GetService("Chat") then
+        return "LegacyChat"
+    end
+    
+    return "Unknown"
+end
+
+local chatType = getChatType()
+print(`Chat system detected: {chatType}`)
 
 -- script stuff
 type GuiOptions = {
@@ -703,15 +729,46 @@ yemenv.events.PlayerChatted:Connect(function(plr: Player, msg: string)
     end
 end)
 
--- messy events
+-- Chat binding with support for both TextChatService and Legacy Chat
 local bindChatToPlyr = function(plyr: Player)
     if not plyr then return end
     
-    if _G.BindPlayerChatted then
-        _G.BindPlayerChatted(plyr):Connect(function(msg: string)
-            if not isRunning then return end
-            yemenv.events.PlayerChatted:Fire(plyr, msg)
+    -- For TextChatService (new Roblox chat)
+    if chatType == "TextChatService" then
+        task.spawn(function()
+            local chatConnection = TextChatService.OnIncomingMessage:Connect(function(message: TextChatMessage)
+                if not isRunning then return end
+                
+                -- Check if the message is from this player
+                if message.TextSource and message.TextSource.UserId == plyr.UserId then
+                    yemenv.events.PlayerChatted:Fire(plyr, message.Text)
+                end
+            end)
+            
+            -- Clean up when player leaves
+            table.insert(connections, plyr.AncestryChanged:Connect(function()
+                if not plyr:IsDescendantOf(Players) then
+                    chatConnection:Disconnect()
+                end
+            end))
         end)
+        
+    -- For Legacy Chat
+    elseif chatType == "LegacyChat" then
+        if _G.BindPlayerChatted then
+            _G.BindPlayerChatted(plyr):Connect(function(msg: string)
+                if not isRunning then return end
+                yemenv.events.PlayerChatted:Fire(plyr, msg)
+            end)
+        else
+            -- Fallback for legacy chat
+            pcall(function()
+                plyr.Chatted:Connect(function(msg: string)
+                    if not isRunning then return end
+                    yemenv.events.PlayerChatted:Fire(plyr, msg)
+                end)
+            end)
+        end
     end
 
     task.wait()
@@ -1271,9 +1328,20 @@ AddCommand(Ranks.Special.Rank, "speak", "Speak as player" .. C("[F]", Color3.fro
 
     for i, target in ipairs(targets) do
         pcall(function()
-            yemenv.runLua(target, `game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("{spoofText}", "All")`)
+            if chatType == "TextChatService" then
+                -- For TextChatService, send message through TextChatService
+                yemenv.runLua(target, `game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("{spoofText}")`)
+            else
+                -- For legacy chat
+                yemenv.runLua(target, `game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("{spoofText}", "All")`)
+            end
         end)
     end
+end)
+
+AddCommand(0, "chatversion", "Check chat version", "<>", function(caller: Player)
+    if not caller then return end
+    Msg(caller, `Chat System: {chatType}`)
 end)
 
 print('commands initialized')
